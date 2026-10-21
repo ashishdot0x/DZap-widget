@@ -66,3 +66,24 @@ jobs:
             reports/
             test-results/
           retention-days: 7
+
+  failure-summary:
+    if: ${{ always() && github.event_name != 'pull_request' && (needs.unit.result == 'failure' || needs.smoke.result == 'failure' || needs.widget.result == 'failure') }}
+    needs: [unit, smoke, widget]
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      RUN_ID: ${{ github.run_id }}
+      UNIT_RESULT: ${{ needs.unit.result }}
+      SMOKE_RESULT: ${{ needs.smoke.result }}
+      WIDGET_RESULT: ${{ needs.widget.result }}
+    steps:
+      - name: Publish short failure summary in GitHub Issues
+        run: |
+          printf '### Automated DZap Widget QA run\n\nRun: %s\n\n| Job | Status |\n|---|---|\n| Unit | %s |\n| Smoke | %s |\n| Embedded Swap/Zap | %s |\n\nOpen the run to see failed test logs, screenshots, traces, and artifacts. These failures have not yet been classified as product bugs.\n' "$RUN_URL" "$UNIT_RESULT" "$SMOKE_RESULT" "$WIDGET_RESULT" > /tmp/widget-qa-failure.md
+          gh issue create --repo "$REPO" --title "QA CI failure — run $RUN_ID" --body-file /tmp/widget-qa-failure.md
