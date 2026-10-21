@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ReadOnlyMockWallet } from '../../helpers/mockWallet';
-import { captureWidgetState, selectWidgetMode, type Mode } from '../../helpers/embeddedWidget';
+import { captureWidgetState, captureModeCandidates, selectWidgetMode, type Mode } from '../../helpers/embeddedWidget';
 import { auditNetwork } from '../../helpers/networkAudit';
 
 for (const mode of ['Swap', 'Zap'] as Mode[]) {
@@ -20,6 +20,7 @@ for (const mode of ['Swap', 'Zap'] as Mode[]) {
       expect(wallet.actions.some(action => /eth_sendTransaction|eth_sendRawTransaction/.test(action.method)))
         .toBe(false);
     } finally {
+      await info.attach('widget-mode-candidates.json', { body: Buffer.from(JSON.stringify(await captureModeCandidates(page), null, 2)), contentType: 'application/json' });
       await audit.attach(info);
       await page.screenshot({ path: info.outputPath(mode.toLowerCase() + '-widget.png'), fullPage: true }).catch(() => undefined);
     }
