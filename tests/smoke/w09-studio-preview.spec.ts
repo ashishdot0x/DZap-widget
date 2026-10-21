@@ -11,10 +11,10 @@ test('W09: Studio renders its swap/zap workspace', async ({ page }, info) => {
   try {
     const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     expect(response?.status()).toBeLessThan(400);
-    await expect(page.getByText(/widget st/i).first()).toBeVisible();
-    await expect(page.getByText(/swap/i).first()).toBeVisible();
-    await expect(page.getByText(/zap/i).first()).toBeVisible();
-    await expect(page.getByText(/connect wallet/i).first()).toBeVisible();
+    await expect(page.getByText(/widget st/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/^swap$/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/^zap$/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/connect wallet/i).filter({ visible: true }).first()).toBeVisible();
   } finally {
     await d.attach(page, info);
   }
@@ -25,7 +25,7 @@ test('W10: embedded widget becomes interactive rather than remaining a loading s
   try {
     const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     expect(response?.status()).toBeLessThan(400);
-    await expect(page.getByText(/connect wallet/i).first()).toBeVisible();
+    await expect(page.getByText(/connect wallet/i).filter({ visible: true }).first()).toBeVisible();
 
     // Require an actual token/amount input or an accessible asset-selection control
     // inside the loaded app. Studio theme controls alone do not satisfy this condition.
