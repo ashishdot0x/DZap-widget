@@ -1,0 +1,50 @@
+name: DZap Widget QA
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npx playwright test tests/unit --project=desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-evidence
+          path: |
+            reports/
+            test-results/
+          retention-days: 7
+
+  smoke:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: widget-smoke-evidence
+          path: |
+            reports/
+            test-results/
+          retention-days: 7
