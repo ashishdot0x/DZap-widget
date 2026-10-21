@@ -36,8 +36,12 @@ export async function selectWidgetMode(page: Page, mode: Mode): Promise<WidgetSu
       return locateWidget(page);
     }
   }
-  const candidatesDump = (await captureModeCandidates(page)).filter(item => /swap|zap|trade|widget|mode/i.test(item.text + ' ' + (item.ariaLabel ?? '') + ' ' + item.html)).slice(0, 18);
-  throw new Error('No clickable ' + mode + ' mode control found. DOM candidates: ' + JSON.stringify(candidatesDump).slice(0, 4500));
+  const candidatesDump = await page.evaluate(() => {
+    const nodes = Array.from(document.querySelectorAll('body *')).filter(el => el.children.length === 0 && /^(swap|zap)$/i.test((el.textContent || '').trim())).slice(0, 15);
+    return nodes.map(el => ({ text: el.textContent?.trim(), ancestor: el.parentElement?.parentElement?.outerHTML.slice(0, 900) }));
+  }).catch(() => []);
+  const frameList = page.frames().map(frame => frame.url().split('?')[0]);
+  throw new Error('No clickable ' + mode + ' mode control found. DOM candidates: ' + JSON.stringify({ candidatesDump, frameList }).slice(0, 5000));
 }
 
 export async function captureModeCandidates(page: Page) {
