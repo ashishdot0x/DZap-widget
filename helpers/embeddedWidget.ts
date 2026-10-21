@@ -36,7 +36,8 @@ export async function selectWidgetMode(page: Page, mode: Mode): Promise<WidgetSu
       return locateWidget(page);
     }
   }
-  throw new Error('No clickable ' + mode + ' mode control found; inspect widget-mode-candidates.json');
+  const candidatesDump = (await captureModeCandidates(page)).filter(item => /swap|zap|trade|widget|mode/i.test(item.text + ' ' + (item.ariaLabel ?? '') + ' ' + item.html)).slice(0, 18);
+  throw new Error('No clickable ' + mode + ' mode control found. DOM candidates: ' + JSON.stringify(candidatesDump).slice(0, 4500));
 }
 
 export async function captureModeCandidates(page: Page) {
