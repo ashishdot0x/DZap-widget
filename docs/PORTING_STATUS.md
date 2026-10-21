@@ -31,3 +31,10 @@ These modules have **not** been blindly copied because the Widget UI and API wir
 - No real wallet keys or real-chain broadcast here.
 - No work is performed on the original DZapTestingSuite.
 - Tests written are not tests passed. All statuses require observed execution evidence.
+
+## Phase 4 — read-only UI map (21 Oct 2026)
+- `helpers/widgetDiscovery.ts`: identify observed chain/token/pool/review/wallet UI labels without assuming a specific layout.
+- `W08`: collect DOM control inventory and categories with a safe injected EIP-1193 mock wallet.
+- Unit tests: label classification, chain-switch rejection, and denial of raw transaction broadcasts.
+- This does NOT demonstrate a functioning swap, quote, chain-selector interaction or an actual connected wallet.
+- Live site could not be fetched through the available web reader; selector mapping remains unverified.
