@@ -40,6 +40,7 @@ export class ReadOnlyMockWallet {
         },
       };
       (window as any).__dzapQaProvider = provider;
+      (window as any).__dzapQaEmit = (name: string, value: unknown) => listeners.get(name)?.forEach(callback => callback(value));
       Object.defineProperty(window, 'ethereum', { value: provider, configurable: true });
       const announce = () => window.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
         detail: Object.freeze({
@@ -55,6 +56,17 @@ export class ReadOnlyMockWallet {
     return wallet;
   }
 
+  private async emit(name: string, value: unknown): Promise<void> {
+    await this.page.evaluate(([eventName, payload]) => {
+      (window as any).__dzapQaEmit?.(eventName, payload);
+    }, [name, value] as const).catch(() => undefined);
+  }
+
+  async disconnect(): Promise<void> {
+    this.connected = false;
+    await this.emit('accountsChanged', []);
+  }
+
   async handle(method: string, params: unknown[] = []): Promise<unknown> {
     const entry: WalletAction = { method, params };
     this.actions.push(entry);
@@ -68,10 +80,15 @@ export class ReadOnlyMockWallet {
       case 'eth_accounts': return (entry.result = this.connected ? [QA_WALLET_ADDRESS] : []);
       case 'eth_requestAccounts':
         if (this.behavior.rejectConnect) return reject(4001, 'User rejected account connection');
-        this.connected = true; return (entry.result = [QA_WALLET_ADDRESS]);
+        this.connected = true;
+        await this.emit('accountsChanged', [QA_WALLET_ADDRESS]);
+        return (entry.result = [QA_WALLET_ADDRESS]);
       case 'wallet_switchEthereumChain':
         if (this.behavior.rejectChainSwitch) return reject(4001, 'User rejected chain switch');
-        this.chainId = Number.parseInt((params[0] as { chainId: string }).chainId, 16);
+        const value = (params[0] as { chainId: string } | undefined)?.chainId;
+        if (!value || !/^0x[0-9a-f]+$/i.test(value)) return reject(-32602, 'Invalid chainId');
+        this.chainId = Number.parseInt(value, 16);
+        await this.emit('chainChanged', '0x' + this.chainId.toString(16));
         return (entry.result = null);
       case 'personal_sign':
       case 'eth_signTypedData_v4':
